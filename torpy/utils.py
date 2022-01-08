@@ -190,7 +190,7 @@ def http_get(url, timeout=10, headers=None):
 
     real_headers = {'Accept-encoding': 'gzip, deflate'}
     real_headers.update(headers or {})
-    opener.addheaders = [(k, v) for k, v in real_headers.items()]
+    opener.addheaders = list(real_headers.items())
 
     with opener.open(url, timeout=timeout) as response:
         data = response.read()

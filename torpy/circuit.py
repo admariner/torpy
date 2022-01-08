@@ -138,7 +138,7 @@ class Waiter:
 
 class TorReceiver(threading.Thread):
     def __init__(self, tor_socket, handler_mgr):
-        super().__init__(name='RecvLoop_{}'.format(tor_socket.ip_address[0:7]))
+        super().__init__(name='RecvLoop_{}'.format(tor_socket.ip_address[:7]))
 
         self._tor_socket = tor_socket
 
@@ -268,15 +268,13 @@ class CellHandlerManager:
                 # TODO: from_node=from_node
                 handler.handler(cell)
                 handlers.remove(handler)
-            else:
-                # TODO: always call with from_node?
-                if from_node:
-                    if orig_cell:
-                        handler(cell, from_node, orig_cell)
-                    else:
-                        handler(cell, from_node)
+            elif from_node:
+                if orig_cell:
+                    handler(cell, from_node, orig_cell)
                 else:
-                    handler(cell)
+                    handler(cell, from_node)
+            else:
+                handler(cell)
 
     @contextmanager
     def create_waiter(self, cell_types):

@@ -75,11 +75,7 @@ class TorHTTPSConnection(TorHTTPConnection, HTTPSConnection):
     def connect(self):
         TorHTTPConnection.connect(self)
 
-        if self._tunnel_host:
-            server_hostname = self._tunnel_host
-        else:
-            server_hostname = self.host
-
+        server_hostname = self._tunnel_host or self.host
         ssl_sock = self._context.wrap_socket(self.sock.wrapped_sock, server_hostname=server_hostname)
         self.sock = SocketProxy.rewrap(self.sock, ssl_sock)
 
@@ -114,8 +110,7 @@ class RetryOpenerDirector(OpenerDirector):
                 last_err = err
                 if not isinstance(err.reason, socket.timeout):
                     raise
-        else:
-            raise last_err
+        raise last_err
 
 
 def build_tor_opener(guard, hops_count=3, debuglevel=0):

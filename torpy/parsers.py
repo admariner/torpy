@@ -36,9 +36,8 @@ introduction-points
         m = __class__.regex.search(data)
         if m:
             return m.group(1)
-        else:
-            logger.error("Can't parse HSDescriptor: %r", data)
-            raise Exception("Can't parse HSDescriptor")
+        logger.error("Can't parse HSDescriptor: %r", data)
+        raise Exception("Can't parse HSDescriptor")
 
 
 class RouterDescriptorParser:
@@ -62,9 +61,8 @@ ntor-onion-key (?P<ntor_key>[^\n]+)""",
         m = __class__.regex.search(data)
         if m:
             return {k: b64decode(v) for k, v in m.groupdict().items()}
-        else:
-            logger.debug("Can't parse router descriptor: %r", data)
-            raise Exception("Can't parse router descriptor")
+        logger.debug("Can't parse router descriptor: %r", data)
+        raise Exception("Can't parse router descriptor")
 
 
 class IntroPointParser:
@@ -92,5 +90,7 @@ service-key
 
     @staticmethod
     def parse(data):
-        res = [__class__._decode(m.groupdict()) for m in __class__.regex.finditer(data)]
-        return res
+        return [
+            __class__._decode(m.groupdict())
+            for m in __class__.regex.finditer(data)
+        ]

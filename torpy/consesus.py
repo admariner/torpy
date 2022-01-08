@@ -250,8 +250,8 @@ class TorConsensus:
 
                 # Try verify again
                 verified, _ = self.verify(new_doc)
-                if not verified:
-                    raise Exception('Invalid consensus')
+            if not verified:
+                raise Exception('Invalid consensus')
 
             # Use new consensus document
             self._document = new_doc
@@ -317,7 +317,7 @@ class TorConsensus:
         results = []
 
         for onion_router in self.get_document(with_renew=with_renew).routers:
-            if flags and not all(f in onion_router.flags for f in flags):
+            if flags and any(f not in onion_router.flags for f in flags):
                 continue
             if has_dir_port and not onion_router.dir_port:
                 continue

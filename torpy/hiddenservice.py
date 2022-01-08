@@ -74,8 +74,10 @@ class HiddenService:
         if onion_address.endswith('.onion'):
             onion_address = onion_address[:-6].rsplit('.', 1)[-1]
 
-        if len(onion_address) != HiddenService.REND_SERVICE_ID_LEN_BASE32 and \
-           len(onion_address) != HiddenService.HS_SERVICE_ADDR_LEN_BASE32:
+        if len(onion_address) not in [
+            HiddenService.REND_SERVICE_ID_LEN_BASE32,
+            HiddenService.HS_SERVICE_ADDR_LEN_BASE32,
+        ]:
             raise Exception(f'Unknown onion address: {onion_address}')
 
         return onion_address
@@ -247,8 +249,7 @@ class ResponsibleDir:
     def get_introductions(self, hidden_service):
         descriptor_id = hidden_service.get_descriptor_id(self.replica)
         response = self._fetch_descriptor(descriptor_id)
-        for intro_point in self._get_intro_points(response, hidden_service.descriptor_cookie):
-            yield intro_point
+        yield from self._get_intro_points(response, hidden_service.descriptor_cookie)
 
     def _fetch_descriptor(self, descriptor_id):
         # tor ref: rend_client_fetch_v2_desc
@@ -282,7 +283,7 @@ class ResponsibleDir:
         intro_points_raw = b64decode(intro_points_raw_base64)
 
         # Check whether it's encrypted
-        if intro_points_raw[0] == AuthType.Basic or intro_points_raw[0] == AuthType.Stealth:
+        if intro_points_raw[0] in [AuthType.Basic, AuthType.Stealth]:
             if not descriptor_cookie:
                 raise Exception('Hidden service needs descriptor_cookie for authorization')
             enc_buff = EncPointsBuffer(intro_points_raw)

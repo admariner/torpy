@@ -45,10 +45,7 @@ class TorCell:
 
         See tor-spec.txt 3. "Cell Packet format"
         """
-        if cls.NUM == CellVersions.NUM or cls.NUM >= 128:
-            return True
-        else:
-            return False
+        return cls.NUM == CellVersions.NUM or cls.NUM >= 128
 
     def _serialize_payload(self):
         raise NotImplementedError('Must be implemented in a subclass')
@@ -250,24 +247,23 @@ class RelayedTorCell(TorCell):
     def _serialize_payload(self):
         if self.is_encrypted:
             return self._encrypted
-        else:
-            relay_payload = self._inner_cell._serialize_payload()
-            # logger.debug('relay_payload: %s', to_hex(relay_payload))
+        relay_payload = self._inner_cell._serialize_payload()
+        # logger.debug('relay_payload: %s', to_hex(relay_payload))
 
-            payload_bytes = struct.pack('!B', self._inner_cell.NUM)
-            payload_bytes += struct.pack('!H', 0)  # 'recognized'
-            payload_bytes += struct.pack('!H', self._stream_id)
-            payload_bytes += struct.pack('!4s', self._digest if self._digest else b'\x00' * 4)  # Digest placeholder
-            if len(relay_payload) > RelayedTorCell.MAX_PAYLOD_SIZE:
-                raise Exception(
-                    'relay payload length cannot be more than {} ({} got)'.format(
-                        RelayedTorCell.MAX_PAYLOD_SIZE, len(relay_payload)
-                    )
+        payload_bytes = struct.pack('!B', self._inner_cell.NUM)
+        payload_bytes += struct.pack('!H', 0)  # 'recognized'
+        payload_bytes += struct.pack('!H', self._stream_id)
+        payload_bytes += struct.pack('!4s', self._digest or b'\x00' * 4)
+        if len(relay_payload) > RelayedTorCell.MAX_PAYLOD_SIZE:
+            raise Exception(
+                'relay payload length cannot be more than {} ({} got)'.format(
+                    RelayedTorCell.MAX_PAYLOD_SIZE, len(relay_payload)
                 )
-            assert len(relay_payload) + len(self._padding) <= RelayedTorCell.MAX_PAYLOD_SIZE, 'wrong relay payload size'
-            payload_bytes += struct.pack('!H', len(relay_payload))
-            payload_bytes += struct.pack('!{}s'.format(RelayedTorCell.MAX_PAYLOD_SIZE), relay_payload + self._padding)
-            return payload_bytes
+            )
+        assert len(relay_payload) + len(self._padding) <= RelayedTorCell.MAX_PAYLOD_SIZE, 'wrong relay payload size'
+        payload_bytes += struct.pack('!H', len(relay_payload))
+        payload_bytes += struct.pack('!{}s'.format(RelayedTorCell.MAX_PAYLOD_SIZE), relay_payload + self._padding)
+        return payload_bytes
 
     def get_encrypted(self):
         assert self._inner_cell is None
@@ -296,7 +292,7 @@ class RelayedTorCell(TorCell):
     def set_decrypted(self, cell_num, stream_id, digest, relay_payload_len, relay_payload_raw, **kwargs):
         relay_payload = relay_payload_raw[:relay_payload_len]
         padding = relay_payload_raw[relay_payload_len:]
-        if all([b == 0 for b in padding]):
+        if all(b == 0 for b in padding):
             padding = b''
 
         try:
@@ -554,11 +550,10 @@ class CellRelayEnd(TorCell):
         self.ttl = ttl
 
     def _serialize_payload(self):
-        if self.reason == StreamReason.EXIT_POLICY:
-            ip_int = struct.unpack('!I', socket.inet_aton(self.address))[0]
-            return struct.pack('!BII', self.reason, ip_int, self.ttl)
-        else:
+        if self.reason != StreamReason.EXIT_POLICY:
             return struct.pack('!B', self.reason)
+        ip_int = struct.unpack('!I', socket.inet_aton(self.address))[0]
+        return struct.pack('!BII', self.reason, ip_int, self.ttl)
 
     @staticmethod
     def _deserialize_payload(payload, proto_version):
@@ -645,7 +640,7 @@ class CellRelaySendMe(TorCell):
         digest = None
         if len(payload) > 0:
             version, data_len = struct.unpack('!BH', payload[:3])
-            if version != 0 and version != 1:
+            if version not in [0, 1]:
                 logger.error('wrong sendme call version')
             digest = payload[3:3 + data_len]
             if len(payload[3 + data_len:]) > 0:
