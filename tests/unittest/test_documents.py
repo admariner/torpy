@@ -63,12 +63,11 @@ class DocumentEncoder(json.JSONEncoder):
 
     def default(self, obj):
         if isinstance(obj, dict):
-            flt_dict = {
+            return {
                 key: value
                 for (key, value) in obj.items()
                 if key not in DocumentEncoder._excludes
             }
-            return flt_dict
         elif isinstance(obj, bytes):
             return {'_bytes': obj.hex()}
         elif isinstance(obj, Enum):
@@ -99,10 +98,7 @@ def _compare(o, expected_fields):
             _compare(item, expected_fields[i])
     elif isinstance(expected_fields, dict):
         for k, v in expected_fields.items():
-            if isinstance(o, dict):
-                o_val = o[k]
-            else:
-                o_val = getattr(o, k)
+            o_val = o[k] if isinstance(o, dict) else getattr(o, k)
             _compare(o_val, v)
     else:
         assert o == expected_fields

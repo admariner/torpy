@@ -47,11 +47,10 @@ class TorDocumentObject:
             if key not in self._fields:
                 self._fields[key] = []
             self._fields[key].append(result)
+        elif type(result) is dict:
+            self._fields.update(result)
         else:
-            if type(result) is dict:
-                self._fields.update(result)
-            else:
-                self._fields[item.out_name] = result
+            self._fields[item.out_name] = result
 
 
 class TorDocumentReader:
@@ -130,11 +129,7 @@ class TorDocument(TorDocumentObject):
 
     def check_items(self, line, lines):
         t = line.split(' ', 1)
-        if len(t) < 2:
-            kw, rest = t[0], ''
-        else:
-            kw, rest = t
-
+        kw, rest = (t[0], '') if len(t) < 2 else t
         if self._items:
             t = self._items.get(kw, None)
             if t:

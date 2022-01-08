@@ -135,8 +135,7 @@ class TorCellSocket:
             length, = yield from self._read_by_format(self._protocol.length_format)
         else:
             length = TorCell.MAX_PAYLOAD_SIZE
-        cell_buff = yield from coro_recv_exact(length)
-        return cell_buff
+        return (yield from coro_recv_exact(length))
 
     def _read_by_format(self, struct_fmt):
         size = struct.calcsize(struct_fmt)

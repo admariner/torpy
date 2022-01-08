@@ -72,8 +72,7 @@ def do_request(url, method='GET', data=None, headers=None, hops=3, auth_data=Non
     with tor_requests_session(hops, auth_data, retries=retries) as s:
         headers = dict(headers or [])
         # WARN: https://github.com/urllib3/urllib3/pull/1750
-        if SKIP_HEADER and \
-                'user-agent' not in (k.lower() for k in headers.keys()):
+        if SKIP_HEADER and 'user-agent' not in (k.lower() for k in headers):
             headers['User-Agent'] = SKIP_HEADER
         request = Request(method, url, data=data, headers=headers)
         logger.warning('Sending: %s %s', request.method, request.url)
